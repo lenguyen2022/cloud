@@ -58,16 +58,15 @@ def validateLogin():
 
 @app.route('/api/signup', methods=['POST','GET'])
 def signUp():
-    try:
-        _name = request.form['inputName']
-        _email = request.form['inputEmail']
-        _password = request.form['inputPassword']
+    
+    _name = request.form['inputName']
+    _email = request.form['inputEmail']
+    _password = request.form['inputPassword']
 
-        # validate the received values
-        if _name and _email and _password:
-
-            # All Good, let's call MySQL
-
+    # validate the received values
+    if _name and _email and _password:
+        try:
+        # All Good, let's call MySQL
             conn = mysql.connect
             cursor = conn.cursor()
             _hashed_password = generate_password_hash(_password)
@@ -75,22 +74,18 @@ def signUp():
             data = cursor.fetchall()
 
             if len(data) == 0:
-                conn.commit()                   
-                return redirect('/')
+                conn.commit()                                 
+                return  render_template('signupsuccess.html', message= 'User sign up successful')
             else:
-               return  render_template('error.html', message= str(data[0])) 
-        else:
-            return render_template('error.html',message = 'Enter the required fields')
+                return  render_template('error.html', message= str(data[0])) 
+        except Exception as e:
+            return render_template('error.html', message=str(e))
+        finally:
+            cursor.close()
+            conn.close()
+    else:
+        return render_template('error.html',message = 'Enter the required fields')
 
-    except Exception as e:
-        return render_template('error.html', message=str(e))
-    finally:
-        cursor.close()
-        conn.close()
-
-@app.route('/signupsuccess')
-def success():
-    return render_template('signupsuccess.html')
 
 @app.route('/userhome')
 def userHome():
@@ -129,7 +124,7 @@ def config():
                 app.config.from_pyfile('config.py') 
                 conn = mysql.connect 
                 conn.close()   
-                return render_template('index.html')            
+                return render_template("index.html")     
             except Exception as e:
                 os.remove('config.py')
                 return render_template('configerror.html', message=str(e))
