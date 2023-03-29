@@ -48,7 +48,7 @@
 			</div>
 			<div class="bg-light rounded-3 mb-4 p-5">
 				<div class="container-fluid py-5">
-					<h1 class="text-center fw-bold display-5">Bucket List App</h1>
+					<h1 class="text-center fw-bold display-5">Python Flask Skills Ontario App</h1>
 					<form id="form-signin" action="/api/signup" method="POST">
 						        <label for="inputName" class="sr-only">Name</label>
 						        <input
@@ -100,21 +100,6 @@
 
 			    
 		</div>
-		<script>
-			document
-				.querySelector("#form-signin")
-				.addEventListener("submit", async function (e) {
-					e.preventDefault();
-					console.log(new URLSearchParams(new FormData(e.target)).toString());
-					const res = await fetch("/api/signup", {
-						body: new URLSearchParams(new FormData(e.target)).toString(),
-						method: "POST",
-						headers: {
-							"Content-Type": "application/x-www-form-urlencoded",
-						},
-					});
-					console.log(await res.json());
-				});
-		</script>
+
 	</body>
 </html>
