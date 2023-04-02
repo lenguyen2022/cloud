@@ -13,7 +13,7 @@ variable "ami" {
   type        = string
     validation {
         condition     = contains(["ami-0902d2129320aad21", "ami-00e36206d1e5257e7"], var.ami)
-        error_message = "AMI ID must be approved Panorama AMIs."
+        error_message = "AMI ID must be approved AMIs."
     }
 }
 

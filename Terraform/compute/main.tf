@@ -1,5 +1,5 @@
-data "aws_instance" "panorama" {
-  instance_id = module.panorama.id
+data "aws_instance" "compute" {
+  instance_id = module.compute.id
 }
 
 data "aws_subnet_ids" "private" {
@@ -16,7 +16,7 @@ resource "aws_key_pair" "deployer" {
   tags       = var.tags
 }
 
-module "panorama" {
+module "compute" {
   source   = "terraform-aws-modules/ec2-instance/aws"
   version  = "~> 3.0"
 
@@ -26,8 +26,8 @@ module "panorama" {
   subnet_id  = tolist(data.aws_subnet_ids.private.ids)[0]
   tags  = var.tags
   key_name  = aws_key_pair.deployer.key_name
-  vpc_security_group_ids  = [aws_security_group.sg_pan_panorama.id]
-  iam_instance_profile  = aws_iam_instance_profile.pan-iam-instance-profile.id
+  vpc_security_group_ids  = [aws_security_group.compute_sg.id]
+  iam_instance_profile  = aws_iam_instance_profile.compute-iam-instance-profile.id
   volume_tags  = merge(
     var.tags,
     {
@@ -77,51 +77,19 @@ module "panorama" {
   spot_valid_from  = null
 }
 
-resource "aws_security_group" "sg_pan_panorama" {
-  name  = "sg_pan_panorama-${var.region}"
-  description = "Security Group For Panorama Management Interface"
+resource "aws_security_group" "compute_sg" {
+  name  = "compute_sg-${var.region}"
+  description = "Security Group For EC2 Compute Instances"
   vpc_id = var.vpc_id
 
   ingress {
-    description = "Managed Devices to Panorama"
+    description = "Managed Devices to Compute"
     from_port  = 3978
     to_port  = 3978
     protocol  = "tcp"
     cidr_blocks = ["10.0.0.0/8", "172.16.0.0/12"]
   }
   
-  ingress {
-    description = "Managed Devices Content Updates"
-    from_port  = 28443
-    to_port  = 28443
-    protocol  = "tcp"
-    cidr_blocks = ["10.0.0.0/8", "172.16.0.0/12"]
-  }
-
-  ingress {
-    description = "Panorama HA"
-    from_port  = 28769
-    to_port  = 28769
-    protocol  = "tcp"
-    cidr_blocks = ["10.0.0.0/8"]
-  }
-
-  ingress {
-    description = "Panorama HA Other"
-    from_port  = 28260
-    to_port  = 28260
-    protocol  = "tcp"
-    cidr_blocks = ["10.0.0.0/8"]
-
-  }
-
-  ingress {
-    description = "Palo Encrypted Synchronization"
-    from_port  = 28
-    to_port  = 28
-    protocol  = "tcp"
-    cidr_blocks = ["10.0.0.0/8"]
-  }
 
   ingress {
     description = "Ping"
@@ -131,16 +99,9 @@ resource "aws_security_group" "sg_pan_panorama" {
     cidr_blocks = ["10.0.0.0/8"]
   }
 
-  ingress {
-    description = "Palo Log Distribution"
-    from_port  = 28270
-    to_port  = 28270
-    protocol  = "tcp"
-    cidr_blocks = ["10.0.0.0/8"]
-  }
 
   ingress {
-    description = "HTTPS Management"
+    description = "HTTPS"
     from_port  = 443
     to_port  = 443
     protocol  = "tcp"
@@ -155,14 +116,6 @@ resource "aws_security_group" "sg_pan_panorama" {
     cidr_blocks = ["10.0.0.0/8"]
   }
 
-  ingress {
-    description = "SNMP Monitoring"
-    from_port  = 161
-    to_port  = 161
-    protocol  = "udp"
-    cidr_blocks = ["10.0.0.0/8"]
-  }
-
   egress {
     from_port  = 0
     to_port  = 0
@@ -173,8 +126,8 @@ resource "aws_security_group" "sg_pan_panorama" {
   tags = var.tags
 }
 
-resource "aws_ebs_volume" "panorama_log_drive" {
-  availability_zone = data.aws_instance.panorama.availability_zone
+resource "aws_ebs_volume" "compute_log_drive" {
+  availability_zone = data.aws_instance.compute.availability_zone
   size  = "2048"
   encrypted  = false
   tags  = merge(
@@ -189,16 +142,16 @@ resource "aws_ebs_volume" "panorama_log_drive" {
   }
 }
 
-resource "aws_volume_attachment" "panorama_log_drive_attach" {
+resource "aws_volume_attachment" "compute_log_drive_attach" {
   device_name  = "/dev/xvdb"
-  volume_id  = aws_ebs_volume.panorama_log_drive.id
-  instance_id  = module.panorama.id
+  volume_id  = aws_ebs_volume.compute_log_drive.id
+  instance_id  = module.compute.id
   lifecycle {
     ignore_changes = [instance_id]
   }
 }
-resource "aws_iam_role" "pa-iam-role" {
-  name = "${var.name}-pa-iam-role-${var.region}"
+resource "aws_iam_role" "compute-iam-role" {
+  name = "${var.name}-compute-iam-role-${var.region}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -216,8 +169,8 @@ resource "aws_iam_role" "pa-iam-role" {
 
 
 # FW IAM Policy
-resource "aws_iam_policy" "pa-iam-policy" {
-  name = "${var.name}-pa-iam-policy-${var.region}"
+resource "aws_iam_policy" "compute-iam-policy" {
+  name = "${var.name}-compute-iam-policy-${var.region}"
   description = "IAM Policy for VM-Series Firewall"
   policy = <<EOF
 {
@@ -251,11 +204,11 @@ EOF
 
 
 resource "aws_iam_role_policy_attachment" "policy-attachment" {
-  role       = aws_iam_role.pa-iam-role.name
-  policy_arn = aws_iam_policy.pa-iam-policy.arn
+  role       = aws_iam_role.compute-iam-role.name
+  policy_arn = aws_iam_policy.compute-iam-policy.arn
 }
 
-resource "aws_iam_instance_profile" "pan-iam-instance-profile" {
+resource "aws_iam_instance_profile" "compute-iam-instance-profile" {
   name = "${var.name}-iam-profile-${var.region}"
-  role = aws_iam_role.pa-iam-role.name
+  role = aws_iam_role.compute-iam-role.name
 }
