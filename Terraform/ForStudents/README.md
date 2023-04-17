@@ -7,11 +7,11 @@ The deployment uses public AMI with the application code and dependencies alread
 Database scheme of MySQL database is inhereted from the public snapshot of the DB.
 Application is connecting to the DB hosted on Amazon RDS by using parameters retrieved from the Amazon Parameter Store.
 
-### Download and Install the AWS CLI
+### Download the AWS CLI
 - https://aws.amazon.com/cli/
 ### Download Terraform
 - https://developer.hashicorp.com/terraform/downloads?product_intent=terraform
-### Recommended IDE
+### Recommended IDE 
 - Cloud9 IDE 
 - Download: https://aws.amazon.com/cloud9/
 ### How to set environment variables
