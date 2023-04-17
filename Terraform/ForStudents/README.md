@@ -13,7 +13,7 @@ Application is connecting to the DB hosted on Amazon RDS by using parameters ret
 - https://developer.hashicorp.com/terraform/downloads?product_intent=terraform
 ### Recommended IDE 
 - Cloud9 IDE 
-- Download: https://aws.amazon.com/cloud9/
+- Link: https://aws.amazon.com/cloud9/
 ### How to set environment variables
 - Linux or macOS
     ```
